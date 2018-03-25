@@ -28,7 +28,8 @@ K = size(instr_data, 1); % number of  counterparties
 rho = dlmread('credit_driver_corr.csv', '\t');
 sqrt_rho = (chol(rho))'; % Cholesky decomp of rho (for generating correlated Normal random numbers)
 X = randn(50,50) * sqrt_rho;
-covar = cov(X);
+%covar = cov(X);
+covar = rho;
 
 disp('======= Credit Risk Model with Credit-State Migrations =======')
 disp('============== Monte Carlo Scenario Generation ===============')
@@ -51,19 +52,17 @@ exposure(:, 1) = (1-recov_rate) .* exposure(:, 1);
 CS_Bdry = norminv( cumsum(prob(:,1:C-1), 2) );
 
 % -------- Insert your code here -------- %
-w = [];
 if(~exist('scenarios_out.mat','file'))
     
     % -------- Insert your code here -------- %
     
-    for s = 1:Nout
-        
-        for i = 1:K
-            normcorr = mvnrnd(zeros(1,50), covar);
+    parfor s = 1:Nout        
+         normcorr = mvnrnd(zeros(1,50), covar);
+         w = [];
+        for i = 1:K           
             norm = normrnd(0,1);
             stddev = sqrt(1-(beta(i)^2));
-            credit = (beta(i) * normcorr(driver(i))) + (stddev * norm);
-            
+            credit = (beta(i) * normcorr(driver(i))) + (stddev * norm);            
             for c = 1:size(CS_Bdry,2)
                 credBound = CS_Bdry(i, :);
                 if(credit < credBound(c))
@@ -78,12 +77,12 @@ if(~exist('scenarios_out.mat','file'))
             loss = exposure(i,lossIndex);
             w = [w; loss];           
         end
-        
+       Losses_out(s, :) = w;
     end
 
     % Calculated out-of-sample losses (100000 x 100)
     % Losses_out
-    Losses_out = w;
+   
     save('scenarios_out', 'Losses_out')
 else
     load('scenarios_out', 'Losses_out')
@@ -105,58 +104,108 @@ alphas = [0.99 0.999];
 
 % Compute VaR and CVaR (non-Normal and Normal) for 100000 scenarios
 for(portN = 1:2)
-    loss = Losses_out * cell2mat(x0(portN));
-    loss = sort(-loss);
+    totloss = Losses_out * cell2mat(x0(portN));
+    totloss = sort(-totloss);
+    meanloss = mu_l' * cell2mat(x0(portN));
     for(q=1:length(alphas))
         alf = alphas(q);
         % -------- Insert your code here -------- %
-        % VaRout(portN,q)  = ...
-        % VaRinN(portN,q)  = ...
-        % CVaRout(portN,q) = ...
-        % CVaRinN(portN,q) = ...
+        VaRout(portN,q)  = totloss(ceil(Nout * alf));
+        VaRinN(portN,q)  = meanloss + norminv(alf,0,1)*std(totloss);
+        CVaRout(portN,q) = (1/(Nout*(1-alf))) * ( (ceil(Nout*alf)-Nout*alf) * VaRout(portN,q) + sum(totloss(ceil(Nout*alf)+1:Nout)) );
+        CVaRinN(portN,q) = meanloss + (normpdf(norminv(alf,0,1))/(1-alf))*std(Nout);
         % -------- Insert your code here -------- %        
- end
+    end
 end
 
 
 % Perform 100 trials
 N_trials = 100;
-
+l1 = [];
+portfMC1 = [];
+portfMC2 = [];
 for(tr=1:N_trials)
     
     % Monte Carlo approximation 1
 
     % -------- Insert your code here -------- %
     
+    
     for s = 1:ceil(Nin/Ns) % systemic scenarios
         % -------- Insert your code here -------- %
+        normcorr = mvnrnd(zeros(1,50), covar);
+        
         for si = 1:Ns % idiosyncratic scenarios for each systemic
             % -------- Insert your code here -------- %
+            l1 = [];
+            
+            for i = 1:K               
+                norm = normrnd(0,1);
+                stddev = sqrt(1-(beta(i)^2));
+                credit = (beta(i) * normcorr(driver(i))) + (stddev * norm);
+
+                for c = 1:size(CS_Bdry,2)
+                    credBound = CS_Bdry(i, :);
+                    if(credit < credBound(c))
+                        lossIndex = c;
+                        break                
+                    else
+                        lossIndex = 7;
+                    end            
+
+                end
+
+                loss = exposure(i,lossIndex);
+                l1 = [l1; loss];           
+            end
+            Losses_inMC1((s - 1) * si + si, :) = l1;
         end
     end
     
     % Calculated losses for MC1 approximation (5000 x 100)
-    % Losses_inMC1
+    
     
     % Monte Carlo approximation 2
     
     % -------- Insert your code here -------- %
-    
+  
     for s = 1:Nin % systemic scenarios (1 idiosyncratic scenario for each systemic)
         % -------- Insert your code here -------- %
+        normcorr = mvnrnd(zeros(1,50), covar);
+        l2 = [];
+        for i = 1:K               
+            norm = normrnd(0,1);
+            stddev = sqrt(1-(beta(i)^2));
+            credit = (beta(i) * normcorr(driver(i))) + (stddev * norm);
+
+            for c = 1:size(CS_Bdry,2)
+                credBound = CS_Bdry(i, :);
+                if(credit < credBound(c))
+                    lossIndex = c;
+                    break                
+                else
+                    lossIndex = 7;
+                end            
+
+            end
+
+            loss = exposure(i,lossIndex);
+            l2 = [l2; loss];           
+        end
+        
+        Losses_inMC2(s, :) = l2;
     end
         
     % Calculated losses for MC2 approximation (5000 x 100)
-    % Losses_inMC2
-    
+   
     % Compute VaR and CVaR
     for(portN = 1:2)
         for(q=1:length(alphas))
             alf = alphas(q);
             % -------- Insert your code here -------- %            
             % Compute portfolio loss 
-            % portf_loss_inMC1 = ...
-            % portf_loss_inMC2 = ...
+            portf_loss_inMC1 = sort(-(Losses_inMC1 * cell2mat(x0(portN))));
+            portf_loss_inMC2 = sort(-(Losses_inMC2 * cell2mat(x0(portN))));
             mu_MCl = mean(Losses_inMC1)';
             var_MCl = cov(Losses_inMC1);
             mu_MC2 = mean(Losses_inMC2)';
@@ -164,17 +213,23 @@ for(tr=1:N_trials)
             % Compute portfolio mean loss mu_p_MC1 and portfolio standard deviation of losses sigma_p_MC1
             % Compute portfolio mean loss mu_p_MC2 and portfolio standard deviation of losses sigma_p_MC2
             % Compute VaR and CVaR for the current trial
-            % VaRinMC1{portN,q}(tr) = ...
-            % VaRinMC2{portN,q}(tr) = ...
-            % VaRinN1{portN,q}(tr) = ...
-            % VaRinN2{portN,q}(tr) = ...
-            % CVaRinMC1{portN,q}(tr) = ...
-            % CVaRinMC2{portN,q}(tr) = ...
-            % CVaRinN1{portN,q}(tr) = ...
-            % CVaRinN2{portN,q}(tr) = ...
+            VaRinMC1{portN,q}(tr) = portf_loss_inMC1(ceil((Nin-1) * alf));
+            VaRinMC2{portN,q}(tr) = portf_loss_inMC2(ceil((Nin-1) * alf));
+            VaRinN1{portN,q}(tr) = mu_MCl' * cell2mat(x0(portN)) + norminv(alf,0,1)*std(portf_loss_inMC1);
+            VaRinN2{portN,q}(tr) = mu_MC2' * cell2mat(x0(portN)) + norminv(alf,0,1)*std(portf_loss_inMC2);
+            CVaRinMC1{portN,q}(tr) = (1/(Nin*(1-alf))) * ((ceil(Nin*alf)-Nin*alf) * VaRinMC1{portN,q}(tr) + sum(portf_loss_inMC1(ceil(Nin*alf)+1:Nin)));  
+            CVaRinMC2{portN,q}(tr) = (1/(Nin*(1-alf))) * ((ceil(Nin*alf)-Nin*alf) * VaRinMC2{portN,q}(tr) + sum(portf_loss_inMC2(ceil(Nin*alf)+1:Nin)));  
+            CVaRinN1{portN,q}(tr) = mu_MCl' * cell2mat(x0(portN)) + (normpdf(norminv(alf,0,1))/(1-alf))*std(portf_loss_inMC1);
+            CVaRinN2{portN,q}(tr) = mu_MC2' * cell2mat(x0(portN)) + (normpdf(norminv(alf,0,1))/(1-alf))*std(portf_loss_inMC2);
             % -------- Insert your code here -------- %
         end
     end
+    portfMC1 = [portfMC1; portf_loss_inMC1];
+    portfMC2 = [portfMC2; portf_loss_inMC2];
+    muMC1 = mean(portfMC1);
+    stdevMC1 = std(portfMC1);
+    muMC2 = mean(portfMC2);
+    stdevMC2 = std(portfMC2);
 end
 
 % Display portfolio VaR and CVaR
@@ -186,13 +241,123 @@ fprintf('\nPortfolio %d:\n\n', portN)
     fprintf('In-sample MC1: VaR %4.1f%% = $%6.2f, CVaR %4.1f%% = $%6.2f\n', 100*alf, mean(VaRinMC1{portN,q}), 100*alf, mean(CVaRinMC1{portN,q}))
     fprintf('In-sample MC2: VaR %4.1f%% = $%6.2f, CVaR %4.1f%% = $%6.2f\n', 100*alf, mean(VaRinMC2{portN,q}), 100*alf, mean(CVaRinMC2{portN,q}))
     fprintf(' In-sample No: VaR %4.1f%% = $%6.2f, CVaR %4.1f%% = $%6.2f\n', 100*alf, VaRinN(portN,q), 100*alf, CVaRinN(portN,q))
-    fprintf(' In-sample N1: VaR %4.1f%% = $%6.2f, CVaR %4.1f%% = $%6.2f\n', 100*alf, mean(VaRinN1{portN,q}), 100*alf, mean(CVaRinN1{portN,q}))
+    fprintf(' In-sample N1: VaR %4.1f%% = $%6.2f, CVaR %4.1f% % = $%6.2f\n', 100*alf, mean(VaRinN1{portN,q}), 100*alf, mean(CVaRinN1{portN,q}))
     fprintf(' In-sample N2: VaR %4.1f%% = $%6.2f, CVaR %4.1f%% = $%6.2f\n\n', 100*alf, mean(VaRinN2{portN,q}), 100*alf, mean(CVaRinN2{portN,q}))
  end
 end
 
 % Plot results
-% figure(1);
+figure(1);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(-portfMC1), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([mean(VaRinMC1{1,1}) mean(VaRinMC1{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([mean(VaRinMC1{1,2}) mean(VaRinMC1{1,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN1{1,1}) mean(VaRinN1{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN1{1,2}) mean(VaRinN1{1,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*mean(VaRinMC1{1,1}), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*mean(VaRinMC1{1,2}), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*mean(VaRinN1{1,1}), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*mean(VaRinN1{1,2}), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio 1 Loss Distribution, MC1')
+xlabel('Portfolio 1 Loss')
+ylabel('Frequency')
+figure(2);
 % -------- Insert your code here -------- %
-% figure(2);
-% -------- Insert your code here -------- %
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(-portfMC1), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([mean(VaRinMC1{2,1}) mean(VaRinMC1{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([mean(VaRinMC1{2,2}) mean(VaRinMC1{2,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN1{2,1}) mean(VaRinN1{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN1{2,2}) mean(VaRinN1{2,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*mean(VaRinMC1{2,1}), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*mean(VaRinMC1{2,2}), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*mean(VaRinN1{2,1}), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*mean(VaRinN1{2,2}), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio 2 Loss Distribution, MC1')
+xlabel('Portfolio 2 Loss')
+ylabel('Frequency')
+
+figure(3);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(-portfMC2), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([mean(VaRinMC2{1,1}) mean(VaRinMC2{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([mean(VaRinMC2{1,2}) mean(VaRinMC2{1,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN2{1,1}) mean(VaRinN2{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN2{1,2}) mean(VaRinN2{1,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*mean(VaRinMC2{1,1}), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*mean(VaRinMC2{1,2}), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*mean(VaRinN2{1,1}), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*mean(VaRinN2{1,2}), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio 1 Loss Distribution, MC2')
+xlabel('Portfolio 1 Loss')
+ylabel('Frequency')
+
+figure(4);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(-portfMC2), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([mean(VaRinMC2{2,1}) mean(VaRinMC2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([mean(VaRinMC2{2,2}) mean(VaRinMC2{2,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN2{2,1}) mean(VaRinN2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([mean(VaRinN2{2,2}) mean(VaRinN2{2,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*mean(VaRinMC2{2,1}), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*mean(VaRinMC2{2,2}), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*mean(VaRinN2{2,1}), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*mean(VaRinN2{2,2}), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio 2 Loss Distribution, MC2')
+xlabel('Portfolio 2 Loss')
+ylabel('Frequency')
+
+% figure(5);
+% set(gcf, 'color', 'white');
+% [frequencyCounts, binLocations] = hist(portfMC2, 100);
+% bar(binLocations, frequencyCounts);
+% hold on;
+% line([VaRinMC2{2,1} VaRinMC2{2,1}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+% hold on;
+% normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+% normf = normf * sum(frequencyCounts)/sum(normf);
+% plot(binLocations, normf, 'r', 'LineWidth', 3);
+% hold on;
+% line([VaRinMC2{2,2} VaRinMC2{2,2}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+% line([VaRinN2{2,1} VaRinN2{2,1}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+% line([VaRinN2{2,2} VaRinN2{2,2}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+% hold off;
+% text(0.98*VaRinMC2{2,1}, max(frequencyCounts)/1.9, 'VaR 99%')
+% text(0.7*VaRinMC2{2,2}, max(frequencyCounts)/1.9, 'VaR 99.9%')
+% text(0.98*VaRinN2{2,1}, max(frequencyCounts)/1.9, 'VaRn 99%')
+% text(0.7*VaRinN2{2,2}, max(frequencyCounts)/1.9, 'VaRn 99.9%')
+% title('Portfolio 2 Loss Distribution, MC2')
+% xlabel('Portfolio 2 Loss')
+% ylabel('Frequency')
