@@ -28,8 +28,8 @@ K = size(instr_data, 1); % number of  counterparties
 rho = dlmread('credit_driver_corr.csv', '\t');
 sqrt_rho = (chol(rho))'; % Cholesky decomp of rho (for generating correlated Normal random numbers)
 X = randn(50,50) * sqrt_rho;
-%covar = cov(X);
-covar = rho;
+covar = cov(X);
+%covar = rho;
 
 disp('======= Credit Risk Model with Credit-State Migrations =======')
 disp('============== Monte Carlo Scenario Generation ===============')
