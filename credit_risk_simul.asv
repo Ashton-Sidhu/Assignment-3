@@ -222,10 +222,15 @@ for(tr=1:N_trials)
             CVaRinN1{portN,q}(tr) = mu_MCl' * cell2mat(x0(portN)) + (normpdf(norminv(alf,0,1))/(1-alf))*std(portf_loss_inMC1);
             CVaRinN2{portN,q}(tr) = mu_MC2' * cell2mat(x0(portN)) + (normpdf(norminv(alf,0,1))/(1-alf))*std(portf_loss_inMC2);
             % -------- Insert your code here -------- %
+            portfMC1 = [portfMC1 ; portf_loss_inMC1'];
+            portfMC2 = [portfMC2 ; portf_loss_inMC2'];
         end
     end
    
 end
+
+mPortfMC1 = mean(portfMC1);
+mPortfMC2 = mean(portfMC2);
 
 % Display portfolio VaR and CVaR
 for(portN = 1:2)
@@ -244,12 +249,12 @@ end
 % Plot results
 figure(1);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-mean(), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC1), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{1,1}) mean(VaRinMC1{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -267,12 +272,12 @@ ylabel('Frequency')
 figure(2);
 % -------- Insert your code here -------- %
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-portfMC1), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC1), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{2,1}) mean(VaRinMC1{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -290,12 +295,12 @@ ylabel('Frequency')
 
 figure(3);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-portfMC2), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC2), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{1,1}) mean(VaRinMC2{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(mPortfMC2)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -313,12 +318,12 @@ ylabel('Frequency')
 
 figure(4);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-portfMC2), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC2), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{2,1}) mean(VaRinMC2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(portfMC2)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;

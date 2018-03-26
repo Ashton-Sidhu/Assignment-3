@@ -204,8 +204,8 @@ for(tr=1:N_trials)
             alf = alphas(q);
             % -------- Insert your code here -------- %            
             % Compute portfolio loss 
-            portf_loss_inMC1 = sort(-(Losses_inMC1 * cell2mat(x0(portN))));
-            portf_loss_inMC2 = sort(-(Losses_inMC2 * cell2mat(x0(portN))));
+            portf_loss_inMC1 = sort(Losses_inMC1 * cell2mat(x0(portN)));
+            portf_loss_inMC2 = sort(Losses_inMC2 * cell2mat(x0(portN)));
             mu_MCl = mean(Losses_inMC1)';
             var_MCl = cov(Losses_inMC1);
             mu_MC2 = mean(Losses_inMC2)';
@@ -229,6 +229,9 @@ for(tr=1:N_trials)
    
 end
 
+mPortfMC1 = mean(portfMC1);
+mPortfMC2 = mean(portfMC2);
+
 % Display portfolio VaR and CVaR
 for(portN = 1:2)
 fprintf('\nPortfolio %d:\n\n', portN)    
@@ -246,12 +249,12 @@ end
 % Plot results
 figure(1);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-mean(portfMC1)), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC1), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{1,1}) mean(VaRinMC1{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -269,12 +272,12 @@ ylabel('Frequency')
 figure(2);
 % -------- Insert your code here -------- %
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-mean(portfMC1)), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC1), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{2,1}) mean(VaRinMC1{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC1))/std(portfMC1)).^2 );
+normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -292,12 +295,12 @@ ylabel('Frequency')
 
 figure(3);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-mean(portfMC2)), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC2), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{1,1}) mean(VaRinMC2{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(mPortfMC2)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -315,12 +318,12 @@ ylabel('Frequency')
 
 figure(4);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(-mean(portfMC2)), 100);
+[frequencyCounts, binLocations] = hist(sort(-mPortfMC2), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{2,1}) mean(VaRinMC2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
+normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(mPortfMC2)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -336,25 +339,25 @@ title('Portfolio 2 Loss Distribution, MC2')
 xlabel('Portfolio 2 Loss')
 ylabel('Frequency')
 
-% figure(5);
-% set(gcf, 'color', 'white');
-% [frequencyCounts, binLocations] = hist(portfMC2, 100);
-% bar(binLocations, frequencyCounts);
-% hold on;
-% line([VaRinMC2{2,1} VaRinMC2{2,1}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
-% hold on;
-% normf = ( 1/(std(portfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(portfMC2))/std(portfMC2)).^2 );
-% normf = normf * sum(frequencyCounts)/sum(normf);
-% plot(binLocations, normf, 'r', 'LineWidth', 3);
-% hold on;
-% line([VaRinMC2{2,2} VaRinMC2{2,2}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% line([VaRinN2{2,1} VaRinN2{2,1}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% line([VaRinN2{2,2} VaRinN2{2,2}], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% hold off;
-% text(0.98*VaRinMC2{2,1}, max(frequencyCounts)/1.9, 'VaR 99%')
-% text(0.7*VaRinMC2{2,2}, max(frequencyCounts)/1.9, 'VaR 99.9%')
-% text(0.98*VaRinN2{2,1}, max(frequencyCounts)/1.9, 'VaRn 99%')
-% text(0.7*VaRinN2{2,2}, max(frequencyCounts)/1.9, 'VaRn 99.9%')
-% title('Portfolio 2 Loss Distribution, MC2')
-% xlabel('Portfolio 2 Loss')
-% ylabel('Frequency')
+figure(5);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(-Losses_out), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([VaRout(1,1) VaRout(1,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(Losses_out)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(Losses_iyt))/std(Losses_out)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([VaRout(1,2) VaRout(1,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(2,1) VaRinN(2,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(2,2) VaRinN(2,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*VaRout(1,1), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*VaRout(1,2), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*VaRinN(2,1), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*VaRinN(2,2), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio Losses Out of Sample')
+xlabel('Portfolio Loss')
+ylabel('Frequency')
