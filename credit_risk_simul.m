@@ -27,8 +27,8 @@ K = size(instr_data, 1); % number of  counterparties
 % Read matrix of correlations for credit drivers
 rho = dlmread('credit_driver_corr.csv', '\t');
 sqrt_rho = (chol(rho))'; % Cholesky decomp of rho (for generating correlated Normal random numbers)
-X = randn(50,50) * sqrt_rho;
-covar = cov(X);
+% X = randn(50,50) * sqrt_rho;
+% covar = cov(X);
 %covar = rho;
 
 disp('======= Credit Risk Model with Credit-State Migrations =======')
@@ -57,7 +57,7 @@ if(~exist('scenarios_out.mat','file'))
     % -------- Insert your code here -------- %
     
     parfor s = 1:Nout        
-         normcorr = mvnrnd(zeros(1,50), covar);
+        normcorr = sqrt_rho *randn(50,1);
          w = [];
         for i = 1:K           
             norm = normrnd(0,1);
@@ -133,7 +133,7 @@ for(tr=1:N_trials)
     
     for s = 1:ceil(Nin/Ns) % systemic scenarios
         % -------- Insert your code here -------- %
-        normcorr = mvnrnd(zeros(1,50), covar);
+        normcorr = sqrt_rho *randn(50,1);
         
         for si = 1:Ns % idiosyncratic scenarios for each systemic
             % -------- Insert your code here -------- %
@@ -171,7 +171,7 @@ for(tr=1:N_trials)
   
     for s = 1:Nin % systemic scenarios (1 idiosyncratic scenario for each systemic)
         % -------- Insert your code here -------- %
-        normcorr = mvnrnd(zeros(1,50), covar);
+       normcorr = sqrt_rho *randn(50,1);
         l2 = [];
         for i = 1:K               
             norm = normrnd(0,1);
