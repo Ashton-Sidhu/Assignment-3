@@ -113,7 +113,7 @@ for(portN = 1:2)
         VaRout(portN,q)  = totloss(ceil(Nout * alf));
         VaRinN(portN,q)  = meanloss + norminv(alf,0,1)*std(totloss);
         CVaRout(portN,q) = (1/(Nout*(1-alf))) * ( (ceil(Nout*alf)-Nout*alf) * VaRout(portN,q) + sum(totloss(ceil(Nout*alf)+1:Nout)) );
-        CVaRinN(portN,q) = meanloss + (normpdf(norminv(alf,0,1))/(1-alf))*std(Nout);
+        CVaRinN(portN,q) = meanloss + (normpdf(norminv(alf,0,1))/(1-alf))*std(totloss);
         % -------- Insert your code here -------- %        
     end
 end
