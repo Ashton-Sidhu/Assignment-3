@@ -58,7 +58,7 @@ if(~exist('scenarios_out.mat','file'))
     
     parfor s = 1:Nout        
         normcorr = sqrt_rho *randn(50,1);
-         w = [];
+        w = [];
         for i = 1:K           
             norm = normrnd(0,1);
             stddev = sqrt(1-(beta(i)^2));
