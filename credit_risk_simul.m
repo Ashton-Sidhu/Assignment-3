@@ -105,7 +105,7 @@ alphas = [0.99 0.999];
 % Compute VaR and CVaR (non-Normal and Normal) for 100000 scenarios
 for(portN = 1:2)
     totloss = Losses_out * cell2mat(x0(portN));
-    totloss = sort(-totloss);
+    totloss = sort(totloss);
     meanloss = mu_l' * cell2mat(x0(portN));
     for(q=1:length(alphas))
         alf = alphas(q);
@@ -225,12 +225,9 @@ for(tr=1:N_trials)
             
         end
     end
-   portfMC1 = [portfMC1 ; portf_loss_inMC1'];
-   portfMC2 = [portfMC2 ; portf_loss_inMC2'];
+  
 end
 
-mPortfMC1 = mean(portfMC1);
-mPortfMC2 = mean(portfMC2);
 
 % Display portfolio VaR and CVaR
 for(portN = 1:2)
@@ -246,15 +243,21 @@ fprintf('\nPortfolio %d:\n\n', portN)
  end
 end
 
+port1mc1loss = Losses_inMC1 * cell2mat(x0(1));
+port1mc2loss = Losses_inMC1 * cell2mat(x0(2));
+port2mc1loss = Losses_inMC2 * cell2mat(x0(1));
+port2mc2loss = Losses_inMC2 * cell2mat(x0(2));
+port1lossout = Losses_out * cell2mat(x0(1));
+port2lossout = Losses_out * cell2mat(x0(2));
 % Plot results
 figure(1);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(mPortfMC1), 100);
+[frequencyCounts, binLocations] = hist(sort(port1mc1loss), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{1,1}) mean(VaRinMC1{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
+normf = ( 1/(std(port1mc1loss)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port1mc1loss))/std(port1mc1loss)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -272,12 +275,12 @@ ylabel('Frequency')
 figure(2);
 % -------- Insert your code here -------- %
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(mPortfMC1), 100);
+[frequencyCounts, binLocations] = hist(sort(port1mc2loss), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC1{2,1}) mean(VaRinMC1{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(mPortfMC1)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC1))/std(mPortfMC1)).^2 );
+normf = ( 1/(std(port1mc2loss)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port1mc2loss))/std(port1mc2loss)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -295,12 +298,12 @@ ylabel('Frequency')
 
 figure(3);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(mPortfMC2), 100);
+[frequencyCounts, binLocations] = hist(sort(port2mc1loss), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{1,1}) mean(VaRinMC2{1,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(mPortfMC2)).^2 );
+normf = ( 1/(std(port2mc1loss)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port2mc1loss))/std(port2mc1loss)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -318,12 +321,12 @@ ylabel('Frequency')
 
 figure(4);
 set(gcf, 'color', 'white');
-[frequencyCounts, binLocations] = hist(sort(mPortfMC2), 100);
+[frequencyCounts, binLocations] = hist(sort(port2mc2loss), 100);
 bar(binLocations, frequencyCounts);
 hold on;
 line([mean(VaRinMC2{2,1}) mean(VaRinMC2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
 hold on;
-normf = ( 1/(std(mPortfMC2)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(mPortfMC2))/std(mPortfMC2)).^2 );
+normf = ( 1/(std(port2mc2loss)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port2mc2loss))/std(port2mc2loss)).^2 );
 normf = normf * sum(frequencyCounts)/sum(normf);
 plot(binLocations, normf, 'r', 'LineWidth', 3);
 hold on;
@@ -331,7 +334,7 @@ line([mean(VaRinMC2{2,2}) mean(VaRinMC2{2,2})], [0 max(frequencyCounts)/2], 'Col
 line([mean(VaRinN2{2,1}) mean(VaRinN2{2,1})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
 line([mean(VaRinN2{2,2}) mean(VaRinN2{2,2})], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
 hold off;
-text(0.98*mean(VaRinMC2{2,1}), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*mean(VaRinMC2{2,1}), max(frequencyCounts)/2.5, 'VaR 99%')
 text(0.98*mean(VaRinMC2{2,2}), max(frequencyCounts)/1.9, 'VaR 99.9%')
 text(0.98*mean(VaRinN2{2,1}), max(frequencyCounts)/1.9, 'VaRn 99%')
 text(0.98*mean(VaRinN2{2,2}), max(frequencyCounts)/1.9, 'VaRn 99.9%')
@@ -339,25 +342,60 @@ title('Portfolio 2 Loss Distribution, MC2')
 xlabel('Portfolio 2 Loss')
 ylabel('Frequency')
 
-% figure(5);
-% set(gcf, 'color', 'white');
-% [frequencyCounts, binLocations] = hist(sort(Losses_out), 100);
-% bar(binLocations, frequencyCounts);
-% hold on;
-% line([VaRout(1,1) VaRout(1,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
-% hold on;
-% normf = ( 1/(std(Losses_out)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(Losses_out))/std(Losses_out)).^2 );
-% normf = normf * sum(frequencyCounts)/sum(normf);
-% plot(binLocations, normf, 'r', 'LineWidth', 3);
-% hold on;
-% line([VaRout(1,2) VaRout(1,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% line([VaRinN(2,1) VaRinN(2,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% line([VaRinN(2,2) VaRinN(2,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
-% hold off;
-% text(0.98*VaRout(1,1), max(frequencyCounts)/1.9, 'VaR 99%')
-% text(0.98*VaRout(1,2), max(frequencyCounts)/1.9, 'VaR 99.9%')
-% text(0.98*VaRinN(2,1), max(frequencyCounts)/1.9, 'VaRn 99%')
-% text(0.98*VaRinN(2,2), max(frequencyCounts)/1.9, 'VaRn 99.9%')
-% title('Portfolio Losses Out of Sample')
-% xlabel('Portfolio Loss')
-% ylabel('Frequency')
+figure(5);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(port1lossout), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([VaRout(1,1) VaRout(1,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(port1lossout)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port1lossout))/std(port1lossout)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([VaRout(1,2) VaRout(1,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(1,1) VaRinN(1,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(1,2) VaRinN(1,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*VaRout(1,1), max(frequencyCounts)/1.9, 'VaR 99%')
+text(0.98*VaRout(1,2), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*VaRinN(1,1), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*VaRinN(1,2), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio Losses Out of Sample, Portfolio 1')
+xlabel('Portfolio Loss')
+ylabel('Frequency')
+
+figure(6);
+set(gcf, 'color', 'white');
+[frequencyCounts, binLocations] = hist(sort(port2lossout), 100);
+bar(binLocations, frequencyCounts);
+hold on;
+line([VaRout(2,1) VaRout(2,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+normf = ( 1/(std(port2lossout)*sqrt(2*pi)) ) * exp( -0.5*((binLocations-mean(port2lossout))/std(port2lossout)).^2 );
+normf = normf * sum(frequencyCounts)/sum(normf);
+plot(binLocations, normf, 'r', 'LineWidth', 3);
+hold on;
+line([VaRout(2,2) VaRout(2,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(2,1) VaRinN(2,1)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+line([VaRinN(2,2) VaRinN(2,2)], [0 max(frequencyCounts)/2], 'Color', 'r', 'LineWidth', 1, 'LineStyle', '-.');
+hold off;
+text(0.98*VaRout(2,1), max(frequencyCounts)/2.5, 'VaR 99%')
+text(0.98*VaRout(2,2), max(frequencyCounts)/1.9, 'VaR 99.9%')
+text(0.98*VaRinN(2,1), max(frequencyCounts)/1.9, 'VaRn 99%')
+text(0.98*VaRinN(2,2), max(frequencyCounts)/1.9, 'VaRn 99.9%')
+title('Portfolio Losses Out of Sample, Portfolio 2')
+xlabel('Portfolio Loss')
+ylabel('Frequency')
+
+figure(7)
+qqplot(sort(port1lossout));
+title('QQ Plot, Out of Sample Portfolio 1')
+xlabel('Quantile Normal')
+ylabel('Quantile Sample')
+
+figure(8)
+qqplot(sort(port2lossout));
+title('QQ Plot, Out of Sample Portfolio 2')
+xlabel('Quantile Normal')
+ylabel('Quantile Sample')
